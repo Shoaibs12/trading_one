@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Activity, Briefcase, TrendingUp, TrendingDown, RefreshCw, AlertCircle, Play, Square } from 'lucide-react';
 import dynamic from 'next/dynamic';
 const Chart = dynamic(() => import('./Chart'), { ssr: false });
 
@@ -46,7 +45,7 @@ export default function Dashboard() {
   return (
     <div className="container">
       <header className="header">
-        <h1><Activity color="var(--accent-color)" /> Ghost Run Simulator</h1>
+        <h1>🚀 Ghost Run Simulator</h1>
         <div className="controls">
           {isRunning && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success-color)' }}>
@@ -58,7 +57,7 @@ export default function Dashboard() {
             onClick={() => setIsRunning(!isRunning)}
             style={{ backgroundColor: isRunning ? 'var(--warning-color)' : 'var(--success-color)' }}
           >
-            {isRunning ? <><Square size={16} /> Pause</> : <><Play size={16} /> Start Simulation</>}
+            {isRunning ? <>◼ Pause</> : <>▶ Start Simulation</>}
           </button>
         </div>
       </header>
@@ -144,7 +143,7 @@ export default function Dashboard() {
 
         <div className="side-col" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div className="panel">
-            <h2 className="panel-title"><Briefcase size={18} /> Vault Status</h2>
+            <h2 className="panel-title">💼 Vault Status</h2>
             <div className="stats-grid">
               <div className="stat-box">
                 <div className="stat-label">Total Balance</div>
@@ -167,7 +166,7 @@ export default function Dashboard() {
             <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
               <div className="stat-label">Total Profit/Loss</div>
               <div className={`stat-value ${totalProfit >= 0 ? 'success' : 'danger'}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                {totalProfit >= 0 ? <TrendingUp size={24} /> : <TrendingDown size={24} />}
+                <span>{totalProfit >= 0 ? '📈' : '📉'}</span>
                 {totalProfit >= 0 ? '+' : '-'}${Math.abs(totalProfit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>({profitPercentage >= 0 ? '+' : ''}{profitPercentage.toFixed(2)}%)</span>
               </div>
@@ -211,7 +210,7 @@ export default function Dashboard() {
             
             {systemState.consecutive_losses > 0 && (
               <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'rgba(218, 54, 51, 0.1)', border: '1px solid var(--danger-color)', borderRadius: '6px', fontSize: '0.8rem', display: 'flex', gap: '0.5rem' }}>
-                <AlertCircle size={16} color="var(--danger-color)" style={{ flexShrink: 0 }} />
+                <span style={{ fontSize: '1rem', flexShrink: 0 }}>⚠️</span>
                 <span>AI adjusted parameters to be more conservative due to recent losses.</span>
               </div>
             )}

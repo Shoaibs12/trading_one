@@ -25,7 +25,14 @@ export async function tick() {
     const existingCount = db.prepare('SELECT COUNT(*) as count FROM market_data').get() as any;
     const limit = existingCount.count === 0 ? 50 : 2;
 
-    const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=${limit}`);
+    // Add 10-second timeout to Binance klines request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
+    const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=${limit}`, {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
     const rawData = await response.json();
 
     for (const kline of rawData) {
@@ -39,7 +46,13 @@ export async function tick() {
     }
 
     if (existingCount.count > 0 && newCandles.length > 0) {
-      const tickerResponse = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
+      const tickerController = new AbortController();
+      const tickerTimeoutId = setTimeout(() => tickerController.abort(), 10000);
+      
+      const tickerResponse = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT', {
+        signal: tickerController.signal
+      });
+      clearTimeout(tickerTimeoutId);
       const tickerData = await tickerResponse.json();
       const tickerPrice = parseFloat(tickerData.price);
       const currentMinute = Math.floor(Date.now() / 60000) * 60000;
@@ -53,6 +66,7 @@ export async function tick() {
     }
   } catch (err) {
     console.error('Failed to fetch Binance data:', err);
+    // Return empty candles so dashboard loads; next tick will retry
     return { success: false, error: 'API fetch failed' };
   }
 
@@ -97,7 +111,7 @@ export async function tick() {
     // Stop Loss Hit
     if (profitPercentage <= -systemState.stop_loss_percentage) {
       shouldClose = true;
-      aiInsight = \`Strict Stop Loss triggered (\${(profitPercentage*100).toFixed(2)}%). Real data proved invalid entry. Adjusting thresholds.\`;
+      aiInsight = `Strict Stop Loss triggered (${(profitPercentage*100).toFixed(2)}%). Real data proved invalid entry. Adjusting thresholds.`;
       
       // Adaptive Learning: Decrease confidence, slightly widen stop loss
       db.prepare(`
@@ -111,7 +125,7 @@ export async function tick() {
     // Take Profit Hit
     else if (profitPercentage >= (systemState.profit_target_multiplier - 1)) {
       shouldClose = true;
-      aiInsight = \`Profit target reached (\${(profitPercentage*100).toFixed(2)}%). SMA pattern was successful.\`;
+      aiInsight = `Profit target reached (${(profitPercentage*100).toFixed(2)}%). SMA pattern was successful.`;
       
       // Adaptive Learning: Reset losses
       db.prepare(`
@@ -166,7 +180,7 @@ export async function tick() {
         db.prepare(`
           INSERT INTO trades (asset, type, status, entry_price, trade_size, timestamp, ai_insight)
           VALUES (?, ?, ?, ?, ?, ?, ?)
-        `).run('BTC/USD', tradeType, 'OPEN', latestClose, targetInvestment, timestamp, \`Price diverges from SMA by \${(priceDiffPercentage*100).toFixed(2)}%. Initiating Mean Reversion \${tradeType}.\`);
+        `).run('BTC/USD', tradeType, 'OPEN', latestClose, targetInvestment, timestamp, `Price diverges from SMA by ${(priceDiffPercentage*100).toFixed(2)}%. Initiating Mean Reversion ${tradeType}.`);
         
         // Update vault
         db.prepare(`
