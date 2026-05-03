@@ -8,75 +8,41 @@ function calculateSMA(data: any[], period: number) {
   return sum / period;
 }
 
-// Simple momentum calculation over a short lookback window
-function calculateMomentum(data: any[], period: number) {
-  if (data.length <= period) return 0;
-  const latest = data[data.length - 1].close;
-  const previous = data[data.length - period - 1].close;
-  return latest - previous;
-}
-
 export async function tick() {
   const timestamp = Date.now();
   
   // 1. Fetch Real Market Data from Binance
-  let newCandles: Array<{ timestamp: number; open: number; high: number; low: number; close: number }> = [];
+  let newCandles = [];
   try {
+    // Check if we need historical data
     const existingCount = db.prepare('SELECT COUNT(*) as count FROM market_data').get() as any;
-    const limit = existingCount.count === 0 ? 50 : 2;
-
-    // Add 10-second timeout to Binance klines request
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const limit = existingCount.count === 0 ? 50 : 1;
     
-    const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=${limit}`, {
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-    const rawData = await response.json();
-
-    for (const kline of rawData) {
+    const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=\${limit}`);
+    const data = await response.json();
+    
+    for (const kline of data) {
       newCandles.push({
-        timestamp: kline[0],
+        timestamp: kline[0], // Open time
         open: parseFloat(kline[1]),
         high: parseFloat(kline[2]),
         low: parseFloat(kline[3]),
         close: parseFloat(kline[4])
       });
     }
-
-    if (existingCount.count > 0 && newCandles.length > 0) {
-      const tickerController = new AbortController();
-      const tickerTimeoutId = setTimeout(() => tickerController.abort(), 10000);
-      
-      const tickerResponse = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT', {
-        signal: tickerController.signal
-      });
-      clearTimeout(tickerTimeoutId);
-      const tickerData = await tickerResponse.json();
-      const tickerPrice = parseFloat(tickerData.price);
-      const currentMinute = Math.floor(Date.now() / 60000) * 60000;
-      const latestCandle = newCandles[newCandles.length - 1];
-
-      if (latestCandle.timestamp === currentMinute) {
-        latestCandle.close = tickerPrice;
-        latestCandle.high = Math.max(latestCandle.high, tickerPrice);
-        latestCandle.low = Math.min(latestCandle.low, tickerPrice);
-      }
-    }
   } catch (err) {
-    console.error('Failed to fetch Binance data:', err);
-    // Return empty candles so dashboard loads; next tick will retry
-    return { success: false, error: 'API fetch failed' };
+    console.error("Failed to fetch Binance data:", err);
+    return { success: false, error: "API fetch failed" };
   }
 
-  // Insert or update candles in database
+  // Insert real candles into database
   for (const c of newCandles) {
     db.prepare(`
       INSERT OR IGNORE INTO market_data (timestamp, open, high, low, close)
       VALUES (?, ?, ?, ?, ?)
     `).run(c.timestamp, c.open, c.high, c.low, c.close);
-
+    
+    // Also update if the candle is the same timestamp but still open
     db.prepare(`
       UPDATE market_data SET open=?, high=?, low=?, close=? WHERE timestamp=?
     `).run(c.open, c.high, c.low, c.close, c.timestamp);
@@ -90,9 +56,8 @@ export async function tick() {
   const openTrades = db.prepare('SELECT * FROM trades WHERE status = ?').all('OPEN') as any[];
   const allCandles = db.prepare('SELECT * FROM market_data ORDER BY timestamp ASC').all() as any[];
 
-  // Calculate Indicators: SMA and short-term momentum
+  // Calculate Indicator: 10-period Simple Moving Average
   const currentSMA = calculateSMA(allCandles, 10);
-  const currentMomentum = calculateMomentum(allCandles, 3);
 
   // 3. Process Open Trades
   for (const trade of openTrades) {
@@ -162,12 +127,13 @@ export async function tick() {
     // AI Indicator Logic using Real SMA and Price
     const priceDiffPercentage = Math.abs(latestClose - currentSMA) / currentSMA;
     const isUptrend = latestClose > currentSMA;
-    const momentumFilter = Math.abs(currentMomentum) >= 5;
     
-    // The required divergence is defined by the confidence_threshold.
+    // We only trigger if the price diverges from SMA significantly (momentum)
+    // The required divergence is defined by the confidence_threshold (e.g. 0.001 = 0.1% diff)
+    // We scale confidence_threshold heavily down so the simulator actually triggers trades
     const requiredDivergence = systemState.confidence_threshold * 0.002;
 
-    if (priceDiffPercentage > requiredDivergence && momentumFilter) {
+    if (priceDiffPercentage > requiredDivergence) {
       // Strategy: Mean Reversion. If price is far above SMA, we short. If far below, we long.
       const tradeType = isUptrend ? 'SELL' : 'BUY';
       
