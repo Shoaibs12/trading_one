@@ -8,13 +8,27 @@ export default function Dashboard() {
   const [data, setData] = useState<any>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadDashboardData = async (url: string, options?: RequestInit) => {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+    return response.json();
+  };
 
   // Fetch initial data
   useEffect(() => {
-    fetch('/api/data')
-      .then((res) => res.json())
+    loadDashboardData('/api/data')
       .then((json) => {
         setData(json);
+        setError(null);
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
+      })
+      .finally(() => {
         setLoading(false);
       });
   }, []);
@@ -24,16 +38,25 @@ export default function Dashboard() {
     let interval: NodeJS.Timeout;
     if (isRunning) {
       interval = setInterval(() => {
-        fetch('/api/tick', { method: 'POST' })
-          .then((res) => res.json())
-          .then((json) => setData(json));
+        loadDashboardData('/api/tick', { method: 'POST' })
+          .then((json) => {
+            setData(json);
+            setError(null);
+          })
+          .catch((err) => {
+            setError(err instanceof Error ? err.message : 'Simulation update failed');
+          });
       }, 3000); // Tick every 3 seconds for observation
     }
     return () => clearInterval(interval);
   }, [isRunning]);
 
   if (loading || !data) {
-    return <div className="container" style={{ textAlign: 'center', paddingTop: '5rem' }}>Loading Dashboard...</div>;
+    return (
+      <div className="container" style={{ textAlign: 'center', paddingTop: '5rem' }}>
+        {error ? `Dashboard unavailable: ${error}` : 'Loading Dashboard...'}
+      </div>
+    );
   }
 
   const { vault, systemState, recentTrades, recentCandles, stats } = data;
@@ -61,6 +84,12 @@ export default function Dashboard() {
           </button>
         </div>
       </header>
+
+      {error && (
+        <div className="status-banner">
+          {error}
+        </div>
+      )}
 
       <div className="dashboard-grid">
         <div className="main-col" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

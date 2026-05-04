@@ -69,9 +69,32 @@ export function initDB() {
   if (!stateRow) {
     db.prepare(`
       INSERT INTO system_state (id, confidence_threshold, profit_target_multiplier, stop_loss_percentage, consecutive_losses)
-      VALUES (1, 0.7, 1.1, 0.05, 0) -- 5% stop loss initially, target 1.1x (10% profit)
+      VALUES (1, 0.25, 1.0015, 0.0015, 0)
     `).run();
   }
+
+  db.prepare(`
+    UPDATE system_state
+    SET confidence_threshold = 0.25,
+        profit_target_multiplier = 1.0015,
+        stop_loss_percentage = 0.0015
+    WHERE id = 1
+      AND confidence_threshold = 0.7
+      AND profit_target_multiplier = 1.1
+      AND stop_loss_percentage = 0.05
+      AND consecutive_losses = 0
+  `).run();
+
+  db.prepare(`
+    UPDATE system_state
+    SET profit_target_multiplier = 1.0015,
+        stop_loss_percentage = 0.0015
+    WHERE id = 1
+      AND confidence_threshold = 0.25
+      AND profit_target_multiplier = 1.005
+      AND stop_loss_percentage = 0.003
+      AND consecutive_losses = 0
+  `).run();
 }
 
 initDB();
