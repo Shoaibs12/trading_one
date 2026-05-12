@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: trading-one
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:cloud
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_URL
+        value: https://trading-one.onrender.com # Change this to your actual web service URL once deployed

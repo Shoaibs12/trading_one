@@ -80,7 +80,7 @@ export async function tick() {
     // CRITICAL FIX: PnL calculation was previously multiplying by entry price twice
     const unitsHeld = trade.trade_size / trade.entry_price;
     const profitLoss = unitsHeld * profitLossPerUnit;
-    const scalpProfitTarget = Math.max(0.5, trade.trade_size * 0.0005);
+    const scalpProfitTarget = Math.max(0.1, trade.trade_size * 0.0001); // Reduced for faster profit taking
     
     const profitPercentage = isLong ? (latestClose - trade.entry_price) / trade.entry_price : (trade.entry_price - latestClose) / trade.entry_price;
 
@@ -96,8 +96,8 @@ export async function tick() {
       db.prepare(`
         UPDATE system_state 
         SET consecutive_losses = consecutive_losses + 1,
-            confidence_threshold = MIN(1.0, confidence_threshold + 0.02),
-            stop_loss_percentage = MIN(0.1, stop_loss_percentage + 0.01)
+            confidence_threshold = MIN(1.0, confidence_threshold + 0.05),
+            stop_loss_percentage = MIN(0.01, stop_loss_percentage + 0.001)
         WHERE id = 1
       `).run();
     }
@@ -156,7 +156,7 @@ export async function tick() {
     
     // Trigger when price diverges enough from SMA to avoid tiny noise, while still
     // producing enough trades for a 1-minute simulator to learn from outcomes.
-    const requiredDivergence = systemState.confidence_threshold * 0.002;
+    const requiredDivergence = systemState.confidence_threshold * 0.001; // Reduced for faster trades
 
     if (priceDiffPercentage > requiredDivergence) {
       // Strategy: Mean Reversion. If price is far above SMA, we short. If far below, we long.

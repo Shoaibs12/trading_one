@@ -61,6 +61,8 @@ For a production domain, point a domain to the server and put Nginx or another r
 - DigitalOcean App Platform or Render can also work, but use their background worker feature and move the database to Postgres for a stronger setup.
 - Plain serverless hosting is not ideal for a continuously running bot.
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
