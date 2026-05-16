@@ -73,17 +73,9 @@ export function initDB() {
     `).run();
   }
 
-  db.prepare(`
-    UPDATE system_state
-    SET confidence_threshold = 0.05,
-        profit_target_multiplier = 1.0005,
-        stop_loss_percentage = 0.0005
-    WHERE id = 1
-      AND confidence_threshold = 0.25
-      AND profit_target_multiplier = 1.0015
-      AND stop_loss_percentage = 0.0015
-      AND consecutive_losses = 0
-  `).run();
+  // Ensure that dynamic learning properties set via simulator.ts (such as consecutive_losses and confidence_threshold)
+  // are completely retained on restarts. The "memory" lives on.
+  // We no longer forcefully update these properties when starting up unless the table was completely empty.
 }
 
 initDB();

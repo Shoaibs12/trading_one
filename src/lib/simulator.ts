@@ -8,6 +8,49 @@ function calculateSMA(data: any[], period: number) {
   return sum / period;
 }
 
+// Exponential Moving Average calculation
+function calculateEMA(data: any[], period: number) {
+  if (data.length < period) return null;
+  const k = 2 / (period + 1);
+  let ema = data.slice(0, period).reduce((acc, val) => acc + val.close, 0) / period; // Start with SMA
+  for (let i = period; i < data.length; i++) {
+    ema = (data[i].close - ema) * k + ema;
+  }
+  return ema;
+}
+
+// Relative Strength Index calculation
+function calculateRSI(data: any[], period: number) {
+  if (data.length <= period) return null;
+
+  let gains = 0;
+  let losses = 0;
+
+  // Calculate first average gain and loss
+  for (let i = 1; i <= period; i++) {
+    const change = data[i].close - data[i - 1].close;
+    if (change > 0) gains += change;
+    else losses -= change;
+  }
+
+  let avgGain = gains / period;
+  let avgLoss = losses / period;
+
+  // Smooth the rest
+  for (let i = period + 1; i < data.length; i++) {
+    const change = data[i].close - data[i - 1].close;
+    const gain = change > 0 ? change : 0;
+    const loss = change < 0 ? -change : 0;
+
+    avgGain = (avgGain * (period - 1) + gain) / period;
+    avgLoss = (avgLoss * (period - 1) + loss) / period;
+  }
+
+  if (avgLoss === 0) return 100;
+  const rs = avgGain / avgLoss;
+  return 100 - (100 / (1 + rs));
+}
+
 export async function tick() {
   const timestamp = Date.now();
   
@@ -69,8 +112,13 @@ export async function tick() {
   const openTrades = db.prepare('SELECT * FROM trades WHERE status = ?').all('OPEN') as any[];
   const allCandles = db.prepare('SELECT * FROM market_data ORDER BY timestamp ASC').all() as any[];
 
-  // Calculate Indicator: 10-period Simple Moving Average
+  // Calculate Indicators
   const currentSMA = calculateSMA(allCandles, 10);
+  const currentEMA50 = calculateEMA(allCandles, 50);
+  const currentEMA200 = calculateEMA(allCandles, 200);
+  const previousEMA50 = calculateEMA(allCandles.slice(0, -1), 50);
+  const previousEMA200 = calculateEMA(allCandles.slice(0, -1), 200);
+  const currentRSI = calculateRSI(allCandles, 14);
 
   // 3. Process Open Trades
   for (const trade of openTrades) {
@@ -80,7 +128,6 @@ export async function tick() {
     // CRITICAL FIX: PnL calculation was previously multiplying by entry price twice
     const unitsHeld = trade.trade_size / trade.entry_price;
     const profitLoss = unitsHeld * profitLossPerUnit;
-    const scalpProfitTarget = Math.max(0.1, trade.trade_size * 0.0001); // Reduced for faster profit taking
     
     const profitPercentage = isLong ? (latestClose - trade.entry_price) / trade.entry_price : (trade.entry_price - latestClose) / trade.entry_price;
 
@@ -88,7 +135,11 @@ export async function tick() {
     let aiInsight = '';
     
     // Stop Loss Hit
-    if (profitPercentage <= -systemState.stop_loss_percentage) {
+    // For EMA crossover, stop loss is slightly below/above the 200 EMA, or fallback to the system state stop loss.
+    // If we have an EMA value, we can use it, but since we are doing fast trades, we'll keep the tight percentage-based stop loss to prevent big drops.
+    const dynamicStopLoss = systemState.stop_loss_percentage;
+
+    if (profitPercentage <= -dynamicStopLoss) {
       shouldClose = true;
       aiInsight = `Strict Stop Loss triggered (${(profitPercentage*100).toFixed(2)}%). Real data proved invalid entry. Adjusting thresholds.`;
       
@@ -101,28 +152,16 @@ export async function tick() {
         WHERE id = 1
       `).run();
     }
-    // Take Profit Hit
-    else if (profitPercentage >= (systemState.profit_target_multiplier - 1)) {
+    // Take Profit Hit (Aiming for 1:2 Risk/Reward or better based on dynamic Stop Loss)
+    else if (profitPercentage >= dynamicStopLoss * 2) {
       shouldClose = true;
-      aiInsight = `Profit target reached (${(profitPercentage*100).toFixed(2)}%). SMA pattern was successful.`;
+      aiInsight = `Profit target reached (${(profitPercentage*100).toFixed(2)}%) at 1:2 Risk/Reward. EMA pattern was successful.`;
       
       // Adaptive Learning: Reset losses
       db.prepare(`
         UPDATE system_state 
         SET consecutive_losses = 0,
-            confidence_threshold = MAX(0.1, confidence_threshold - 0.01)
-        WHERE id = 1
-      `).run();
-    }
-    // Quick scalp exit for short-term simulation
-    else if (profitLoss >= scalpProfitTarget) {
-      shouldClose = true;
-      aiInsight = `Quick scalp profit captured (+$${profitLoss.toFixed(2)}). Closing early to bank the short-term move.`;
-
-      db.prepare(`
-        UPDATE system_state
-        SET consecutive_losses = 0,
-            confidence_threshold = MAX(0.1, confidence_threshold - 0.005)
+            confidence_threshold = MAX(0.01, confidence_threshold - 0.01)
         WHERE id = 1
       `).run();
     }
@@ -147,31 +186,35 @@ export async function tick() {
   }
 
   // 4. Look for New Trade Opportunities
-  if (openTrades.length === 0 && currentSMA) {
+  if (openTrades.length === 0 && currentEMA50 && currentEMA200 && previousEMA50 && previousEMA200 && currentRSI) {
     const currentVault = db.prepare('SELECT * FROM vault WHERE id = 1').get() as any;
     
-    // AI Indicator Logic using Real SMA and Price
-    const priceDiffPercentage = Math.abs(latestClose - currentSMA) / currentSMA;
-    const isUptrend = latestClose > currentSMA;
-    
-    // Trigger when price diverges enough from SMA to avoid tiny noise, while still
-    // producing enough trades for a 1-minute simulator to learn from outcomes.
-    const requiredDivergence = systemState.confidence_threshold * 0.001; // Reduced for faster trades
+    // EMA Crossover & Momentum Strategy
+    const isGoldenCross = previousEMA50 <= previousEMA200 && currentEMA50 > currentEMA200;
+    const isDeathCross = previousEMA50 >= previousEMA200 && currentEMA50 < currentEMA200;
 
-    if (priceDiffPercentage > requiredDivergence) {
-      // Strategy: Mean Reversion. If price is far above SMA, we short. If far below, we long.
-      const tradeType = isUptrend ? 'SELL' : 'BUY';
+    // RSI Confirmation
+    const isRsiValid = currentRSI >= 40 && currentRSI <= 60;
+    
+    // Confidence threshold requirement for crossover (minimum gap)
+    const requiredGap = currentEMA200 * systemState.confidence_threshold * 0.001;
+    const gapValid = Math.abs(currentEMA50 - currentEMA200) > requiredGap;
+
+    if ((isGoldenCross || isDeathCross) && isRsiValid && gapValid) {
+      const tradeType = isGoldenCross ? 'BUY' : 'SELL';
       
       const maxAllowedInvestment = currentVault.current_balance * 0.3;
       const currentInvested = currentVault.invested_balance;
-      const targetInvestment = currentVault.current_balance * 0.1; // 10% per trade
+      // 1% Rule: Risk maximum 1% to 2% of total trading capital
+      const targetInvestment = currentVault.current_balance * 0.01;
       
       if (currentInvested + targetInvestment <= maxAllowedInvestment && currentVault.available_balance >= targetInvestment) {
+
         // Execute Trade
         db.prepare(`
           INSERT INTO trades (asset, type, status, entry_price, trade_size, timestamp, ai_insight)
           VALUES (?, ?, ?, ?, ?, ?, ?)
-        `).run('BTC/USD', tradeType, 'OPEN', latestClose, targetInvestment, timestamp, `Price diverges from SMA by ${(priceDiffPercentage*100).toFixed(2)}%. Initiating Mean Reversion ${tradeType}.`);
+        `).run('BTC/USD', tradeType, 'OPEN', latestClose, targetInvestment, timestamp, `EMA Crossover Strategy: ${tradeType}. RSI: ${currentRSI.toFixed(2)}. Initiating trade.`);
         
         // Update vault
         db.prepare(`
