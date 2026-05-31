@@ -1,0 +1,1218 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ─── Theme Variables ─── */
+:root {
+  --bg-color: #0a0e17;
+  --bg-surface: #0d1220;
+  --panel-bg: rgba(16, 21, 32, 0.85);
+  --panel-bg-hover: rgba(20, 26, 40, 0.9);
+  --border-color: rgba(255, 255, 255, 0.06);
+  --border-glow: rgba(79, 143, 255, 0.15);
+  --text-primary: #e2e8f0;
+  --text-secondary: #64748b;
+  --text-muted: #475569;
+  --accent-color: #4f8fff;
+  --accent-glow: rgba(79, 143, 255, 0.25);
+  --success-color: #00d68f;
+  --success-glow: rgba(0, 214, 143, 0.2);
+  --danger-color: #ff4757;
+  --danger-glow: rgba(255, 71, 87, 0.2);
+  --warning-color: #ffa502;
+  --warning-glow: rgba(255, 165, 2, 0.15);
+  --purple-color: #a855f7;
+  --purple-glow: rgba(168, 85, 247, 0.15);
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 20px rgba(79, 143, 255, 0.08);
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── Reset & Base ─── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  line-height: 1.5;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 10% 0%, rgba(79, 143, 255, 0.06), transparent 50%),
+    radial-gradient(ellipse 60% 50% at 90% 100%, rgba(0, 214, 143, 0.04), transparent 50%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(168, 85, 247, 0.03), transparent 60%);
+}
+
+/* ─── Container ─── */
+.container {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem 3rem;
+}
+
+/* ─── Header ─── */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
+}
+
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 120px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent-color), transparent);
+}
+
+.header h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  letter-spacing: -0.02em;
+}
+
+.header-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-left: 0.75rem;
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--border-color);
+}
+
+/* ─── Controls ─── */
+.controls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.live-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--success-color);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.75rem;
+  background: var(--success-glow);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(0, 214, 143, 0.15);
+}
+
+/* ─── Dashboard Grid ─── */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.main-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+.side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 1rem;
+  }
+  .header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+}
+
+/* ─── Panel (Glassmorphism) ─── */
+.panel {
+  background: var(--panel-bg);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-md), var(--shadow-glow);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+}
+
+.panel:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.panel-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.panel-title-icon {
+  color: var(--accent-color);
+  opacity: 0.8;
+}
+
+.panel-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.panel-meta {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+/* ─── Stats Grid ─── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.stat-box {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  transition: all var(--transition-base);
+  position: relative;
+}
+
+.stat-box:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+.stat-box.full-width {
+  grid-column: span 2;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.4rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.stat-value.success { color: var(--success-color); }
+.stat-value.danger { color: var(--danger-color); }
+.stat-value.accent { color: var(--accent-color); }
+.stat-value.warning { color: var(--warning-color); }
+.stat-value.purple { color: var(--purple-color); }
+
+.stat-value-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stat-sub {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 0.2rem;
+  font-weight: 400;
+}
+
+.stat-divider {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-color);
+}
+
+/* ─── Chart Container ─── */
+.chart-container {
+  width: 100%;
+  height: 400px;
+  margin-top: 0.75rem;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+/* ─── Signal Gauge (Horizontal Bar) ─── */
+.signal-gauge-container {
+  position: relative;
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.signal-gauge-track {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+  position: relative;
+  overflow: hidden;
+}
+
+.signal-gauge-center {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.signal-gauge-fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 5px;
+  transition: all var(--transition-slow);
+}
+
+.signal-gauge-fill.positive {
+  left: 50%;
+  background: linear-gradient(90deg, rgba(0, 214, 143, 0.4), var(--success-color));
+  box-shadow: 0 0 12px var(--success-glow);
+}
+
+.signal-gauge-fill.negative {
+  right: 50%;
+  background: linear-gradient(270deg, rgba(255, 71, 87, 0.4), var(--danger-color));
+  box-shadow: 0 0 12px var(--danger-glow);
+}
+
+.signal-gauge-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.signal-gauge-value {
+  position: absolute;
+  top: -1.6rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+/* ─── Breakdown Bars ─── */
+.breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.breakdown-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.breakdown-label {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.breakdown-bar-track {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.breakdown-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width var(--transition-slow);
+}
+
+.breakdown-bar-fill.bullish { background: var(--success-color); }
+.breakdown-bar-fill.bearish { background: var(--danger-color); }
+.breakdown-bar-fill.neutral { background: var(--text-secondary); }
+
+/* ─── Daily Profit Target Progress Bar ─── */
+.progress-container {
+  margin: 1rem 0;
+}
+
+.progress-label-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.78rem;
+}
+
+.progress-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.progress-value {
+  font-weight: 700;
+}
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width var(--transition-slow);
+  position: relative;
+}
+
+.progress-fill.success {
+  background: linear-gradient(90deg, rgba(0, 214, 143, 0.6), var(--success-color));
+  box-shadow: 0 0 10px var(--success-glow);
+}
+
+.progress-fill.danger {
+  background: linear-gradient(90deg, rgba(255, 71, 87, 0.6), var(--danger-color));
+  box-shadow: 0 0 10px var(--danger-glow);
+}
+
+.progress-fill.accent {
+  background: linear-gradient(90deg, rgba(79, 143, 255, 0.6), var(--accent-color));
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.progress-fill.target-hit {
+  background: linear-gradient(90deg, var(--success-color), #00ff9f);
+  box-shadow: 0 0 16px var(--success-glow);
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* ─── Indicator Cards ─── */
+.indicator-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.indicator-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-md);
+  padding: 0.85rem;
+  border-left: 3px solid var(--border-color);
+  transition: all var(--transition-base);
+}
+
+.indicator-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-1px);
+}
+
+.indicator-card.blue-border { border-left-color: var(--accent-color); }
+.indicator-card.green-border { border-left-color: var(--success-color); }
+.indicator-card.red-border { border-left-color: var(--danger-color); }
+.indicator-card.orange-border { border-left-color: var(--warning-color); }
+.indicator-card.purple-border { border-left-color: var(--purple-color); }
+
+.indicator-card-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+}
+
+.indicator-card-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+/* ─── Table Styles ─── */
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 0.7rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+td {
+  font-size: 0.84rem;
+  color: var(--text-primary);
+}
+
+tr {
+  transition: background var(--transition-fast);
+}
+
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+/* ─── Badge Styles ─── */
+.badge {
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.68rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.badge.buy {
+  background: var(--success-glow);
+  color: var(--success-color);
+  border: 1px solid rgba(0, 214, 143, 0.2);
+}
+
+.badge.sell {
+  background: var(--danger-glow);
+  color: var(--danger-color);
+  border: 1px solid rgba(255, 71, 87, 0.2);
+}
+
+.badge.hold {
+  background: rgba(255, 165, 2, 0.12);
+  color: var(--warning-color);
+  border: 1px solid rgba(255, 165, 2, 0.2);
+}
+
+.badge.open {
+  background: var(--accent-glow);
+  color: var(--accent-color);
+  border: 1px solid rgba(79, 143, 255, 0.2);
+  animation: pulse-badge 2.5s ease-in-out infinite;
+}
+
+.badge.closed {
+  background: rgba(100, 116, 139, 0.12);
+  color: var(--text-secondary);
+  border: 1px solid rgba(100, 116, 139, 0.15);
+}
+
+/* ─── Direction Badges ─── */
+.direction-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.direction-badge.buy-dir {
+  background: linear-gradient(135deg, rgba(0, 214, 143, 0.15), rgba(0, 214, 143, 0.08));
+  color: var(--success-color);
+  border: 1px solid rgba(0, 214, 143, 0.25);
+  box-shadow: 0 0 12px var(--success-glow);
+}
+
+.direction-badge.sell-dir {
+  background: linear-gradient(135deg, rgba(255, 71, 87, 0.15), rgba(255, 71, 87, 0.08));
+  color: var(--danger-color);
+  border: 1px solid rgba(255, 71, 87, 0.25);
+  box-shadow: 0 0 12px var(--danger-glow);
+}
+
+.direction-badge.hold-dir {
+  background: linear-gradient(135deg, rgba(100, 116, 139, 0.15), rgba(100, 116, 139, 0.08));
+  color: var(--text-secondary);
+  border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+/* ─── AI Insight ─── */
+.ai-insight {
+  font-size: 0.75rem;
+  color: var(--warning-color);
+  font-style: italic;
+  max-width: 240px;
+  line-height: 1.4;
+  opacity: 0.85;
+}
+
+/* ─── Buttons ─── */
+.button {
+  border: none;
+  padding: 0.5rem 1.1rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-family);
+  letter-spacing: 0.01em;
+  position: relative;
+  overflow: hidden;
+}
+
+.button-primary {
+  background: linear-gradient(135deg, var(--success-color), #00b87a);
+  color: #000;
+  box-shadow: 0 2px 12px var(--success-glow);
+}
+
+.button-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(0, 214, 143, 0.3);
+}
+
+.button-warning {
+  background: linear-gradient(135deg, var(--warning-color), #e69400);
+  color: #000;
+  box-shadow: 0 2px 12px var(--warning-glow);
+}
+
+.button-warning:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(255, 165, 2, 0.3);
+}
+
+.button-danger {
+  background: linear-gradient(135deg, rgba(255, 71, 87, 0.15), rgba(255, 71, 87, 0.08));
+  color: var(--danger-color);
+  border: 1px solid rgba(255, 71, 87, 0.25);
+}
+
+.button-danger:hover {
+  background: linear-gradient(135deg, rgba(255, 71, 87, 0.25), rgba(255, 71, 87, 0.15));
+  transform: translateY(-1px);
+}
+
+.button-ghost {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.button-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* ─── Risk Param Row ─── */
+.risk-params {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.risk-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  font-size: 0.82rem;
+}
+
+.risk-row:last-child {
+  border-bottom: none;
+}
+
+.risk-row-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.risk-row-value {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.risk-row-value.success { color: var(--success-color); }
+.risk-row-value.danger { color: var(--danger-color); }
+.risk-row-value.warning { color: var(--warning-color); }
+
+/* ─── Cooldown Alert ─── */
+.cooldown-alert {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  background: rgba(255, 71, 87, 0.08);
+  border: 1px solid rgba(255, 71, 87, 0.2);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  color: var(--danger-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: fade-in var(--transition-base) ease-out;
+}
+
+/* ─── Signal Panel Row ─── */
+.signal-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.signal-agreement {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.agreement-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+.signal-insight {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(168, 85, 247, 0.06);
+  border: 1px solid rgba(168, 85, 247, 0.12);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  color: var(--purple-color);
+  line-height: 1.5;
+  font-style: italic;
+}
+
+/* ─── Profit Text ─── */
+.profit-positive {
+  color: var(--success-color);
+  font-weight: 700;
+}
+
+.profit-negative {
+  color: var(--danger-color);
+  font-weight: 700;
+}
+
+/* ─── Pulse Animation ─── */
+.pulse {
+  width: 8px;
+  height: 8px;
+  background-color: var(--success-color);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--success-color);
+  animation: pulse-animation 2s ease-in-out infinite;
+}
+
+@keyframes pulse-animation {
+  0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(0, 214, 143, 0.6); }
+  50% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(0, 214, 143, 0); }
+  100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(0, 214, 143, 0); }
+}
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* ─── Shimmer / Celebration ─── */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.profit-celebration {
+  background: linear-gradient(
+    90deg,
+    var(--success-color) 0%,
+    #00ff9f 25%,
+    var(--success-color) 50%,
+    #00ff9f 75%,
+    var(--success-color) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+
+/* ─── Fade In Animation ─── */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fade-in var(--transition-base) ease-out;
+}
+
+/* ─── Micro-animation for live updates ─── */
+@keyframes flash-update {
+  0% { background: rgba(79, 143, 255, 0.1); }
+  100% { background: transparent; }
+}
+
+.flash-update {
+  animation: flash-update 0.8s ease-out;
+}
+
+/* ─── Glow Line ─── */
+.glow-line {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+  opacity: 0.2;
+  margin: 1rem 0;
+}
+
+/* ─── Loading State ─── */
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  gap: 1.5rem;
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(79, 143, 255, 0.15);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* ─── Daily Summary Row ─── */
+.daily-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.daily-stat {
+  text-align: center;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.daily-stat-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.daily-stat-label {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 0.15rem;
+}
+
+/* ─── Perf Row (Win Rate etc.) ─── */
+.perf-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.perf-item {
+  padding: 0.85rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.perf-item-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.perf-item-label {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.25rem;
+}
+
+/* ─── Mobile Responsive Tweaks ─── */
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .indicator-cards {
+    grid-template-columns: 1fr;
+  }
+  .breakdown-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .perf-grid {
+    grid-template-columns: 1fr;
+  }
+  .daily-stats-row {
+    grid-template-columns: 1fr;
+  }
+  .signal-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .indicator-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── News Feed Panel ─── */
+.news-feed {
+  max-height: 320px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+
+.news-feed::-webkit-scrollbar {
+  width: 4px;
+}
+
+.news-feed::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.news-feed::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+}
+
+.news-item {
+  display: flex;
+  flex-direction: row;
+  gap: 0.6rem;
+  padding: 0.65rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background var(--transition-fast);
+}
+
+.news-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.news-item:last-child {
+  border-bottom: none;
+}
+
+.news-item-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.news-item-dot.bullish {
+  background: var(--success-color);
+  box-shadow: 0 0 6px var(--success-glow);
+}
+
+.news-item-dot.bearish {
+  background: var(--danger-color);
+  box-shadow: 0 0 6px var(--danger-glow);
+}
+
+.news-item-dot.neutral {
+  background: var(--text-muted);
+}
+
+.news-item-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.news-item-headline {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.news-item-meta {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 0.5rem;
+}
+
+.news-sentiment-summary {
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sentiment-score-display {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* ─── Fear & Greed Display ─── */
+.fear-greed-container {
+  text-align: center;
+  padding: 1rem;
+}
+
+.fear-greed-value {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.fear-greed-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 0.4rem;
+  font-weight: 600;
+}
+
+.fear-greed-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--danger-color), var(--warning-color), var(--success-color));
+  margin-top: 0.75rem;
+  position: relative;
+}
+
+.fear-greed-marker {
+  position: absolute;
+  top: -3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid var(--bg-color);
+  transform: translateX(-50%);
+  transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── Market Regime Badge ─── */
+.regime-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-sm);
+}
+
+.regime-badge.risk-on {
+  background: rgba(0, 214, 143, 0.1);
+  color: var(--success-color);
+  border: 1px solid rgba(0, 214, 143, 0.15);
+}
+
+.regime-badge.risk-off {
+  background: rgba(255, 165, 2, 0.1);
+  color: var(--warning-color);
+  border: 1px solid rgba(255, 165, 2, 0.15);
+}
+
+.regime-badge.extreme-fear {
+  background: rgba(255, 71, 87, 0.1);
+  color: var(--danger-color);
+  border: 1px solid rgba(255, 71, 87, 0.2);
+  animation: pulse-badge 1.5s infinite;
+}
+
+.regime-badge.extreme-greed {
+  background: rgba(255, 165, 2, 0.12);
+  color: var(--warning-color);
+  border: 1px solid rgba(255, 165, 2, 0.2);
+  animation: pulse-badge 1.5s infinite;
+}
+
+/* ─── Equity Curve ─── */
+.equity-chart-container {
+  width: 100%;
+  height: 200px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+/* ─── Error Banner ─── */
+.error-banner {
+  padding: 0.65rem 1rem;
+  background: rgba(255, 71, 87, 0.08);
+  border: 1px solid rgba(255, 71, 87, 0.2);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  color: var(--danger-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  animation: fade-in var(--transition-base);
+}
+
+/* ─── Indicator Cards Grid ─── */
+.indicator-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
