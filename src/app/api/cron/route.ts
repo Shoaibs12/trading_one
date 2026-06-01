@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { tick, getDashboardData } from '@/lib/simulator';
 
-export async function GET(request: Request) {
+export async function GET() {
   // Verify authorization for cloud cron calls
-  const authHeader = request.headers.get('authorization');
+  const headersList = await headers();
+  const authHeader = headersList.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
 
   // In development, allow without auth. In production, require CRON_SECRET
