@@ -24,10 +24,10 @@ export async function POST() {
     db.prepare(`
       UPDATE system_state
       SET confidence_threshold = 0.10,
-          profit_target_percentage = 0.001,
-          stop_loss_percentage = 0.002,
-          trailing_stop_distance = 0.0005,
-          breakeven_trigger = 0.0005,
+          profit_target_percentage = 0.003,
+          stop_loss_percentage = 0.004,
+          trailing_stop_distance = 0.0015,
+          breakeven_trigger = 0.0025,
           max_position_percentage = 0.30,
           consecutive_losses = 0,
           cooldown_until = 0

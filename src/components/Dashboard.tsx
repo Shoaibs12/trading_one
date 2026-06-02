@@ -465,9 +465,11 @@ export default function Dashboard() {
                 <tbody>
                   {recentTrades.map((trade) => {
                     const unrealizedPnl = trade.status === 'OPEN' && currentPrice
-                      ? (trade.type === 'BUY'
+                      ? ((trade.type === 'BUY'
                         ? (currentPrice - trade.entry_price)
-                        : (trade.entry_price - currentPrice)) * (trade.trade_size / trade.entry_price)
+                        : (trade.entry_price - currentPrice)) * (trade.trade_size / trade.entry_price))
+                        - (trade.trade_size * 0.001) // Entry fee
+                        - ((trade.trade_size / trade.entry_price) * currentPrice * 0.001) // Exit fee
                       : null;
 
                     return (

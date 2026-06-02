@@ -471,12 +471,15 @@ export async function tick() {
       }
     }
 
-    // Move to breakeven once +breakeven_trigger% in profit
+    // Move to breakeven once +breakeven_trigger% in profit (breakeven must cover 0.2% round-trip fees)
+    const trueBreakevenLong = trade.entry_price * (1 + (TRADING_FEE_RATE * 2));
+    const trueBreakevenShort = trade.entry_price * (1 - (TRADING_FEE_RATE * 2));
+
     if (profitPercentage >= systemState.breakeven_trigger && trailingStopPrice !== null) {
-      if (isLong && trailingStopPrice < trade.entry_price) {
-        trailingStopPrice = trade.entry_price;
-      } else if (!isLong && trailingStopPrice > trade.entry_price) {
-        trailingStopPrice = trade.entry_price;
+      if (isLong && trailingStopPrice < trueBreakevenLong) {
+        trailingStopPrice = trueBreakevenLong;
+      } else if (!isLong && trailingStopPrice > trueBreakevenShort) {
+        trailingStopPrice = trueBreakevenShort;
       }
     }
 
