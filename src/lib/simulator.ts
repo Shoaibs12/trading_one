@@ -512,7 +512,7 @@ export async function tick() {
       shouldClose = true;
       aiInsight = `Take Profit reached at ${(profitPercentage * 100).toFixed(2)}%. ${signal.insight}`;
       // Reset to aggressive baseline after a win
-      db.prepare('UPDATE system_state SET consecutive_losses = 0, confidence_threshold = 0.25, cooldown_until = 0 WHERE id = 1').run();
+      db.prepare('UPDATE system_state SET consecutive_losses = 0, confidence_threshold = 0.10, cooldown_until = 0 WHERE id = 1').run();
     }
 
     // Check trailing stop hit
@@ -521,7 +521,7 @@ export async function tick() {
         shouldClose = true;
         aiInsight = `Trailing stop hit at $${latestClose.toFixed(2)} (stop was $${trailingStopPrice.toFixed(2)}). P&L: ${(profitPercentage * 100).toFixed(2)}%`;
         if (profitLoss > 0) {
-          db.prepare('UPDATE system_state SET consecutive_losses = 0, confidence_threshold = 0.25, cooldown_until = 0 WHERE id = 1').run();
+          db.prepare('UPDATE system_state SET consecutive_losses = 0, confidence_threshold = 0.10, cooldown_until = 0 WHERE id = 1').run();
         } else {
           const newConsecutive = systemState.consecutive_losses + 1;
           const newConfidence = newConsecutive >= 3
@@ -534,7 +534,7 @@ export async function tick() {
         shouldClose = true;
         aiInsight = `Trailing stop hit at $${latestClose.toFixed(2)} (stop was $${trailingStopPrice.toFixed(2)}). P&L: ${(profitPercentage * 100).toFixed(2)}%`;
         if (profitLoss > 0) {
-          db.prepare('UPDATE system_state SET consecutive_losses = 0, confidence_threshold = 0.25, cooldown_until = 0 WHERE id = 1').run();
+          db.prepare('UPDATE system_state SET consecutive_losses = 0, confidence_threshold = 0.10, cooldown_until = 0 WHERE id = 1').run();
         } else {
           const newConsecutive = systemState.consecutive_losses + 1;
           const newConfidence = newConsecutive >= 3

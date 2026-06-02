@@ -6,7 +6,7 @@
 
 // Hardcoded bot token (repo is private)
 const TELEGRAM_BOT_TOKEN = '8859478288:AAFDynRw5UReYsVWQlxv-baBQLSr1ZafwdQ';
-let TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
+let TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '1321791329';
 
 const BASE_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 let lastUpdateId = 0;
