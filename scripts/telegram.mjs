@@ -1,10 +1,12 @@
 // ============================================================================
 // TELEGRAM BOT SERVICE
 // Handles sending notifications and receiving commands via Telegram
+// Token is hardcoded — repo must be kept PRIVATE
 // ============================================================================
 
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-let TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+// Hardcoded bot token (repo is private)
+const TELEGRAM_BOT_TOKEN = '8859478288:AAFDynRw5UReYsVWQlxv-baBQLSr1ZafwdQ';
+let TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
 
 const BASE_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 let lastUpdateId = 0;
@@ -15,6 +17,10 @@ let lastUpdateId = 0;
 
 export function isTelegramEnabled() {
   return !!TELEGRAM_BOT_TOKEN && !!TELEGRAM_CHAT_ID;
+}
+
+export function getChatId() {
+  return TELEGRAM_CHAT_ID;
 }
 
 export async function sendTelegramMessage(text, options = {}) {
@@ -174,10 +180,46 @@ export function formatDailyPnlMessage(dailyPnl, vault) {
 }
 
 // ============================================================================
+// PERIODIC STATUS (condensed version for auto-broadcast)
+// ============================================================================
+
+export function formatPeriodicStatus(data) {
+  if (!data || !data.vault) return null;
+
+  const vault = data.vault;
+  const pnl = vault.current_balance - vault.initial_balance;
+  const pnlPct = ((pnl / vault.initial_balance) * 100).toFixed(2);
+  const pnlEmoji = pnl >= 0 ? '📈' : '📉';
+  const openTrades = (data.recentTrades || []).filter(t => t.status === 'OPEN');
+  const stats = data.stats || {};
+  
+  // Get latest price
+  const candles = data.recentCandles || [];
+  const latestPrice = candles.length > 0 ? candles[candles.length - 1]?.close : null;
+
+  let msg = [
+    `⏰ *PERIODIC STATUS UPDATE*`,
+    `${'─'.repeat(28)}`,
+    ``,
+    latestPrice ? `💲 BTC: ${fmt(latestPrice)}` : '',
+    `💰 Balance: ${fmt(vault.current_balance)}`,
+    `${pnlEmoji} P/L: ${fmt(pnl)} (${pnlPct}%)`,
+    `📊 W/L: ${stats.wins || 0}/${stats.losses || 0} (${(stats.winRate || 0).toFixed(0)}%)`,
+    `📌 Open: ${openTrades.length} trade${openTrades.length !== 1 ? 's' : ''}`,
+    ``,
+    `🕐 ${new Date().toLocaleString()}`,
+  ].filter(Boolean).join('\n');
+
+  return msg;
+}
+
+// ============================================================================
 // COMMAND POLLING (receive commands from Telegram)
+// Always polls even without CHAT_ID — enables auto-registration
 // ============================================================================
 
 export async function pollForCommands() {
+  // Always poll if we have a token — this enables auto-registration
   if (!TELEGRAM_BOT_TOKEN) return [];
 
   try {
@@ -202,17 +244,21 @@ export async function pollForCommands() {
         // Auto-register chat ID if not set
         if (!TELEGRAM_CHAT_ID) {
           TELEGRAM_CHAT_ID = chatId;
-          console.log(`[Telegram] Auto-registered chat ID: ${chatId} (from: ${fromUser})`);
+          console.log(`[Telegram] ✅ Auto-registered chat ID: ${chatId} (from: ${fromUser})`);
           await sendTelegramMessage(
             `✅ *Ghost Run Trading Bot Connected!*\n\n` +
             `Welcome, ${fromUser}! Your chat ID has been registered.\n\n` +
             `🆔 Chat ID: \`${chatId}\`\n\n` +
-            `⚠️ *IMPORTANT:* Add this to your \`.env\` file:\n` +
-            `\`TELEGRAM_CHAT_ID=${chatId}\`\n\n` +
+            `⚡ *Mode: Aggressive Scalping*\n` +
+            `📊 Trades every few minutes, tight TP/SL\n\n` +
+            `⚠️ *To persist across restarts:*\n` +
+            `Set \`TELEGRAM_CHAT_ID=${chatId}\` in Render env vars\n\n` +
             `Available commands:\n` +
             `/status — View vault & performance\n` +
             `/trades — View recent trades\n` +
             `/daily — Today's P/L summary\n` +
+            `/price — Current BTC price\n` +
+            `/sentiment — Market sentiment\n` +
             `/help — Show all commands`,
             { chatId }
           );
@@ -240,18 +286,25 @@ export async function pollForCommands() {
 // ============================================================================
 
 export async function sendStartupMessage() {
-  if (!isTelegramEnabled()) {
-    console.log('[Telegram] Bot token or chat ID not set — notifications disabled.');
-    if (TELEGRAM_BOT_TOKEN && !TELEGRAM_CHAT_ID) {
-      console.log('[Telegram] Send any message to the bot to auto-register your chat ID.');
-    }
+  if (!TELEGRAM_BOT_TOKEN) {
+    console.log('[Telegram] No bot token — notifications disabled.');
+    return;
+  }
+
+  if (!TELEGRAM_CHAT_ID) {
+    console.log('[Telegram] ⚠️  No CHAT_ID set — polling for auto-registration...');
+    console.log('[Telegram] 👉 Send /start to your bot on Telegram to connect!');
     return;
   }
 
   await sendTelegramMessage(
     `🚀 *Ghost Run Trading Engine Started!*\n\n` +
+    `⚡ *Mode: Aggressive Scalping*\n` +
     `🕐 ${new Date().toLocaleString()}\n` +
-    `📡 Monitoring BTC/USD on Binance\n\n` +
+    `📡 Monitoring BTC/USD on Binance\n` +
+    `⏱️ Tick interval: ${process.env.TICK_INTERVAL_MS || 1500}ms\n\n` +
+    `You'll get notifications for every trade open/close.\n` +
+    `Plus status updates every 5 minutes.\n\n` +
     `Type /help for available commands.`
   );
 }

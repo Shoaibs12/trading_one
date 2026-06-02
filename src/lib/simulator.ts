@@ -152,26 +152,28 @@ function calculateCompositeSignal(indicators: IndicatorReadings): SignalResult {
     activatedCount++;
   }
 
-  // 2. RSI (14) — Weight: 17% (was 20%)
+  // 2. RSI (14) — Weight: 17% (AGGRESSIVE: wider zones for faster triggers)
   if (indicators.rsi !== null) {
     if (indicators.rsi < 30) {
-      // Oversold — bullish signal
+      // Strongly oversold — strong bullish signal
       breakdown.rsi = (30 - indicators.rsi) / 30; // 0 to 1
       bullishCount++;
       reasons.push(`RSI=${indicators.rsi.toFixed(0)} oversold`);
     } else if (indicators.rsi > 70) {
-      // Overbought — bearish signal
+      // Strongly overbought — strong bearish signal
       breakdown.rsi = -(indicators.rsi - 70) / 30; // -1 to 0
       bearishCount++;
       reasons.push(`RSI=${indicators.rsi.toFixed(0)} overbought`);
-    } else if (indicators.rsi < 45) {
-      // Mildly oversold
-      breakdown.rsi = 0.3 * (45 - indicators.rsi) / 15;
+    } else if (indicators.rsi < 40) {
+      // Mildly oversold — trigger at 40 instead of 45 for more trades
+      breakdown.rsi = 0.5 * (40 - indicators.rsi) / 10;
       bullishCount++;
-    } else if (indicators.rsi > 55) {
-      // Mildly overbought
-      breakdown.rsi = -0.3 * (indicators.rsi - 55) / 15;
+      reasons.push(`RSI=${indicators.rsi.toFixed(0)} leaning oversold`);
+    } else if (indicators.rsi > 60) {
+      // Mildly overbought — trigger at 60 instead of 55 for more trades
+      breakdown.rsi = -0.5 * (indicators.rsi - 60) / 10;
       bearishCount++;
+      reasons.push(`RSI=${indicators.rsi.toFixed(0)} leaning overbought`);
     }
     activatedCount++;
   }
@@ -232,21 +234,20 @@ function calculateCompositeSignal(indicators: IndicatorReadings): SignalResult {
     activatedCount++;
   }
 
-  // 6. NEWS SENTIMENT — Weight: 18% (NEW)
+  // 6. NEWS SENTIMENT — Weight: 18% (AGGRESSIVE: lower threshold ±0.05 for more triggers)
   if (indicators.newsSentiment !== 0) {
     const sentimentAbs = Math.abs(indicators.newsSentiment);
-    if (indicators.newsSentiment > 0.15) {
-      // Bullish news
-      let newsScore = Math.min(1, indicators.newsSentiment);
-      // Amplify extreme sentiment
-      if (sentimentAbs > 0.7) newsScore = Math.min(1, newsScore * 1.5);
+    if (indicators.newsSentiment > 0.05) {
+      // Bullish news — lowered from 0.15 to 0.05
+      let newsScore = Math.min(1, indicators.newsSentiment * 1.5); // Amplify weak signals
+      if (sentimentAbs > 0.5) newsScore = Math.min(1, newsScore * 1.5);
       breakdown.news = newsScore;
       bullishCount++;
       reasons.push(`News bullish (${indicators.newsSentiment.toFixed(2)})`);
-    } else if (indicators.newsSentiment < -0.15) {
-      // Bearish news
-      let newsScore = Math.max(-1, indicators.newsSentiment);
-      if (sentimentAbs > 0.7) newsScore = Math.max(-1, newsScore * 1.5);
+    } else if (indicators.newsSentiment < -0.05) {
+      // Bearish news — lowered from -0.15 to -0.05
+      let newsScore = Math.max(-1, indicators.newsSentiment * 1.5); // Amplify weak signals
+      if (sentimentAbs > 0.5) newsScore = Math.max(-1, newsScore * 1.5);
       breakdown.news = newsScore;
       bearishCount++;
       reasons.push(`News bearish (${indicators.newsSentiment.toFixed(2)})`);
@@ -267,8 +268,9 @@ function calculateCompositeSignal(indicators: IndicatorReadings): SignalResult {
 
   const agreementCount = Math.max(bullishCount, bearishCount);
   let direction: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
-  if (score > 0 && bullishCount >= 3) direction = 'BUY';
-  else if (score < 0 && bearishCount >= 3) direction = 'SELL';
+  // AGGRESSIVE: Only need 2 indicators to agree (was 3) for faster trade entry
+  if (score > 0 && bullishCount >= 2) direction = 'BUY';
+  else if (score < 0 && bearishCount >= 2) direction = 'SELL';
 
   return {
     score,
@@ -490,25 +492,27 @@ export async function tick() {
       shouldClose = true;
       aiInsight = `Hard Stop Loss hit at ${(profitPercentage * 100).toFixed(2)}%. ` + signal.insight;
 
-      // BUG FIX #5: Actually implement adaptive confidence threshold
+      // Adaptive confidence — raise bar after repeated losses but with shorter cooldowns
       const newConsecutive = systemState.consecutive_losses + 1;
       const newConfidence = newConsecutive >= 3
-        ? Math.min(0.9, systemState.confidence_threshold + 0.05)
+        ? Math.min(0.5, systemState.confidence_threshold + 0.03)
         : systemState.confidence_threshold;
+      // AGGRESSIVE: 15s cooldown after 1 loss, 30s after 2+ (was 60s/300s)
       db.prepare(`
         UPDATE system_state
         SET consecutive_losses = ?,
             confidence_threshold = ?,
             cooldown_until = ?
         WHERE id = 1
-      `).run(newConsecutive, newConfidence, timestamp + (newConsecutive >= 2 ? 300000 : 60000));
+      `).run(newConsecutive, newConfidence, timestamp + (newConsecutive >= 2 ? 30000 : 15000));
     }
 
     // BUG FIX #1: Check take-profit BEFORE trailing stop (was unreachable due to else-if)
     if (!shouldClose && profitPercentage >= systemState.profit_target_percentage) {
       shouldClose = true;
       aiInsight = `Take Profit reached at ${(profitPercentage * 100).toFixed(2)}%. ${signal.insight}`;
-      db.prepare('UPDATE system_state SET consecutive_losses = 0, confidence_threshold = 0.6 WHERE id = 1').run();
+      // Reset to aggressive baseline after a win
+      db.prepare('UPDATE system_state SET consecutive_losses = 0, confidence_threshold = 0.25, cooldown_until = 0 WHERE id = 1').run();
     }
 
     // Check trailing stop hit
@@ -517,27 +521,27 @@ export async function tick() {
         shouldClose = true;
         aiInsight = `Trailing stop hit at $${latestClose.toFixed(2)} (stop was $${trailingStopPrice.toFixed(2)}). P&L: ${(profitPercentage * 100).toFixed(2)}%`;
         if (profitLoss > 0) {
-          db.prepare('UPDATE system_state SET consecutive_losses = 0, confidence_threshold = 0.6 WHERE id = 1').run();
+          db.prepare('UPDATE system_state SET consecutive_losses = 0, confidence_threshold = 0.25, cooldown_until = 0 WHERE id = 1').run();
         } else {
           const newConsecutive = systemState.consecutive_losses + 1;
           const newConfidence = newConsecutive >= 3
-            ? Math.min(0.9, systemState.confidence_threshold + 0.05)
+            ? Math.min(0.5, systemState.confidence_threshold + 0.03)
             : systemState.confidence_threshold;
           db.prepare('UPDATE system_state SET consecutive_losses = ?, confidence_threshold = ?, cooldown_until = ? WHERE id = 1')
-            .run(newConsecutive, newConfidence, timestamp + 60000);
+            .run(newConsecutive, newConfidence, timestamp + 15000);
         }
       } else if (!isLong && latestClose >= trailingStopPrice) {
         shouldClose = true;
         aiInsight = `Trailing stop hit at $${latestClose.toFixed(2)} (stop was $${trailingStopPrice.toFixed(2)}). P&L: ${(profitPercentage * 100).toFixed(2)}%`;
         if (profitLoss > 0) {
-          db.prepare('UPDATE system_state SET consecutive_losses = 0, confidence_threshold = 0.6 WHERE id = 1').run();
+          db.prepare('UPDATE system_state SET consecutive_losses = 0, confidence_threshold = 0.25, cooldown_until = 0 WHERE id = 1').run();
         } else {
           const newConsecutive = systemState.consecutive_losses + 1;
           const newConfidence = newConsecutive >= 3
-            ? Math.min(0.9, systemState.confidence_threshold + 0.05)
+            ? Math.min(0.5, systemState.confidence_threshold + 0.03)
             : systemState.confidence_threshold;
           db.prepare('UPDATE system_state SET consecutive_losses = ?, confidence_threshold = ?, cooldown_until = ? WHERE id = 1')
-            .run(newConsecutive, newConfidence, timestamp + 60000);
+            .run(newConsecutive, newConfidence, timestamp + 15000);
         }
       }
     }
@@ -596,14 +600,17 @@ export async function tick() {
   const refreshedDailyPnl = db.prepare('SELECT * FROM daily_pnl WHERE date = ?').get(today) as any;
   const dailyTargetHit = refreshedDailyPnl?.target_hit === 1;
 
+  // AGGRESSIVE: Skip cooldown if signal is very strong (score > 0.4)
+  const skipCooldown = Math.abs(signal.score) > 0.4;
+
   const canTrade =
     refreshedOpenTrades.length === 0 &&
     !isDailyLossLimitHit &&
-    !dailyTargetHit && // BUG FIX #4: Enforce daily target
-    timestamp > refreshedState.cooldown_until &&
+    !dailyTargetHit &&
+    (skipCooldown || timestamp > refreshedState.cooldown_until) &&
     signal.direction !== 'HOLD' &&
     Math.abs(signal.score) >= refreshedState.confidence_threshold &&
-    signal.agreementCount >= 3 &&
+    signal.agreementCount >= 2 && // AGGRESSIVE: 2 indicators instead of 3
     allCandles.length >= 35; // Need enough history for all indicators
 
   if (canTrade) {

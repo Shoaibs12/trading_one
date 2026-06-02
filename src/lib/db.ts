@@ -122,18 +122,41 @@ export function initDB() {
         trailing_stop_distance, breakeven_trigger, consecutive_losses, cooldown_until,
         max_daily_loss_percentage, daily_profit_target, max_position_percentage
       )
-      VALUES (1, 0.6, 0.015, 0.008, 0.005, 0.003, 0, 0, 0.03, 10.0, 0.02)
+      VALUES (1, 0.25, 0.005, 0.004, 0.003, 0.002, 0, 0, 0.03, 50.0, 0.03)
     `).run();
     /*
-     * confidence_threshold: 0.6 = minimum composite signal score to enter a trade
-     * profit_target_percentage: 0.015 = 1.5% take profit
-     * stop_loss_percentage: 0.008 = 0.8% hard stop loss
-     * trailing_stop_distance: 0.005 = 0.5% trailing distance from peak
-     * breakeven_trigger: 0.003 = 0.3% profit to move stop to breakeven
+     * AGGRESSIVE SCALPING PARAMETERS:
+     * confidence_threshold: 0.25 = low bar to enter trades quickly
+     * profit_target_percentage: 0.005 = 0.5% take profit (grab small wins fast)
+     * stop_loss_percentage: 0.004 = 0.4% hard stop loss (tight risk control)
+     * trailing_stop_distance: 0.003 = 0.3% trailing distance from peak
+     * breakeven_trigger: 0.002 = 0.2% profit to move stop to breakeven
      * max_daily_loss_percentage: 0.03 = 3% max daily drawdown
-     * daily_profit_target: 10.0 = $10 daily profit target
-     * max_position_percentage: 0.02 = risk max 2% of vault per trade
+     * daily_profit_target: 50.0 = $50 daily profit target
+     * max_position_percentage: 0.03 = risk 3% of vault per trade (bigger positions)
      */
+  }
+
+  // MIGRATION: Update existing databases to aggressive scalping parameters
+  if (stateRow) {
+    const existing = stateRow as any;
+    // Only migrate if still on old conservative defaults
+    if (existing.confidence_threshold >= 0.5 || existing.profit_target_percentage >= 0.01) {
+      db.prepare(`
+        UPDATE system_state SET
+          confidence_threshold = 0.25,
+          profit_target_percentage = 0.005,
+          stop_loss_percentage = 0.004,
+          trailing_stop_distance = 0.003,
+          breakeven_trigger = 0.002,
+          daily_profit_target = 50.0,
+          max_position_percentage = 0.03,
+          consecutive_losses = 0,
+          cooldown_until = 0
+        WHERE id = 1
+      `).run();
+      console.log('[DB] Migrated system_state to aggressive scalping parameters');
+    }
   }
 
   // Initialize today's daily PnL record
