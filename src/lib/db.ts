@@ -122,18 +122,18 @@ export function initDB() {
         trailing_stop_distance, breakeven_trigger, consecutive_losses, cooldown_until,
         max_daily_loss_percentage, daily_profit_target, max_position_percentage
       )
-      VALUES (1, 0.10, 0.005, 0.004, 0.003, 0.002, 0, 0, 0.03, 50.0, 0.03)
+      VALUES (1, 0.10, 0.001, 0.002, 0.0005, 0.0005, 0, 0, 0.03, 50.0, 0.30)
     `).run();
     /*
      * AGGRESSIVE SCALPING PARAMETERS:
      * confidence_threshold: 0.10 = very low bar — trade on any directional signal
-     * profit_target_percentage: 0.005 = 0.5% take profit (grab small wins fast)
-     * stop_loss_percentage: 0.004 = 0.4% hard stop loss (tight risk control)
-     * trailing_stop_distance: 0.003 = 0.3% trailing distance from peak
-     * breakeven_trigger: 0.002 = 0.2% profit to move stop to breakeven
+     * profit_target_percentage: 0.001 = 0.1% take profit (grab small wins fast)
+     * stop_loss_percentage: 0.002 = 0.2% hard stop loss (tight risk control)
+     * trailing_stop_distance: 0.0005 = 0.05% trailing distance from peak
+     * breakeven_trigger: 0.0005 = 0.05% trigger for breakeven stop
+     * max_position_percentage: 0.30 = use 30% of vault per trade
      * max_daily_loss_percentage: 0.03 = 3% max daily drawdown
      * daily_profit_target: 50.0 = $50 daily profit target
-     * max_position_percentage: 0.03 = risk 3% of vault per trade (bigger positions)
      */
   }
 
@@ -141,16 +141,17 @@ export function initDB() {
   if (stateRow) {
     const existing = stateRow as any;
     // Only migrate if still on old conservative defaults
-    if (existing.confidence_threshold >= 0.15 || existing.profit_target_percentage >= 0.01) {
+    if (existing.confidence_threshold >= 0.15 || existing.profit_target_percentage >= 0.005) {
       db.prepare(`
         UPDATE system_state SET
           confidence_threshold = 0.10,
-          profit_target_percentage = 0.005,
-          stop_loss_percentage = 0.004,
-          trailing_stop_distance = 0.003,
-          breakeven_trigger = 0.002,
+          profit_target_percentage = 0.001,
+          stop_loss_percentage = 0.002,
+          trailing_stop_distance = 0.0005,
+          breakeven_trigger = 0.0005,
+          max_position_percentage = 0.30,
+          max_daily_loss_percentage = 0.10,
           daily_profit_target = 50.0,
-          max_position_percentage = 0.03,
           consecutive_losses = 0,
           cooldown_until = 0
         WHERE id = 1

@@ -223,8 +223,8 @@ export async function pollForCommands() {
   if (!TELEGRAM_BOT_TOKEN) return [];
 
   try {
-    const url = `${BASE_URL}/getUpdates?offset=${lastUpdateId + 1}&timeout=1&allowed_updates=["message"]`;
-    const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    const url = `${BASE_URL}/getUpdates?offset=${lastUpdateId + 1}&timeout=5&allowed_updates=["message"]`;
+    const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
     
     if (!response.ok) return [];
     

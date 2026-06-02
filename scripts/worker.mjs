@@ -303,9 +303,13 @@ runTick();
 // Main tick loop — fast for scalping
 setInterval(runTick, tickIntervalMs);
 
-// Poll for Telegram commands every 2 seconds
+// Poll for Telegram commands continuously
 // IMPORTANT: This runs even without CHAT_ID — enables auto-registration
-setInterval(handleCommands, 2000);
+async function commandLoop() {
+  await handleCommands();
+  setTimeout(commandLoop, 2000);
+}
+commandLoop();
 
 // Log reminder about Telegram connection
 if (!isTelegramEnabled()) {

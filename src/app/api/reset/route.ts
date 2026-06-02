@@ -20,14 +20,15 @@ export async function POST() {
       WHERE id = 1
     `).run();
 
-    // Reset system state
+    // Reset system state to aggressive scalping defaults
     db.prepare(`
       UPDATE system_state
-      SET confidence_threshold = 0.6,
-          profit_target_percentage = 0.015,
-          stop_loss_percentage = 0.008,
-          trailing_stop_distance = 0.005,
-          breakeven_trigger = 0.003,
+      SET confidence_threshold = 0.10,
+          profit_target_percentage = 0.001,
+          stop_loss_percentage = 0.002,
+          trailing_stop_distance = 0.0005,
+          breakeven_trigger = 0.0005,
+          max_position_percentage = 0.30,
           consecutive_losses = 0,
           cooldown_until = 0
       WHERE id = 1
